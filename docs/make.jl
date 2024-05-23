@@ -19,5 +19,4 @@ makedocs(;
 
 deploydocs(;
     repo="https://github.com/jfdev001/FETI.jl",
-    devbranch="main",
 )
