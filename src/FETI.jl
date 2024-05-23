@@ -1,5 +1,5 @@
 module FETI
 
-# Write your package code here.
+include("preconditioners.jl")
 
 end
