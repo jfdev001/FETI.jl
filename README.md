@@ -7,13 +7,16 @@
 
 A prototype finite element tearing and interconnecting (FETI) solver. Serial algorithm will be implemented first, and possibly the parallel version will be included. A parallel version with a data oriented approach (e.g., using PartitionedArrays.jl) could be more simple than using MPI.
 
-```
+```julia
 ## Pseudocode
 # Setup local subdomain problems by using a partitioned mesh 
-mesh <- make_mesh()
-partitions <- partition_mesh(mesh) 
-for partition in partitions: 
-    ki * ui = bi <- assemble_local_problem(partition)
+mesh = make_mesh()
+partitions = partition_mesh(mesh) 
+local_problems = []
+for part_i, partition in enumerate(partitions): 
+    ki, bi <- assemble_local_problem(partition)
+    push!(local_problems, LocalProblem(ki, bi))
+end 
 
 # Setup the connectivity info between partitions so that it is known which
 # dofs are on the interface and will be subject to continuity constraints 
@@ -27,11 +30,13 @@ for part_i in 1:length(partitions)
         boundary_j = get_boundary(partitions[part_j])
         interface = intersection(boundary_i, boundary_j)
         update_connectivity_info!(connectivity_info, interface, part_i, part_j)
-    
+    end 
+ 
     # All dofs for part i not on the interface are interior dofs    
     all_dofs = get_dofs(partitions[part_i])
     interface_dofs = get_all_interface_dofs(connectivity_info, part_i)
-    interior_dofs = all_dofs[all_dofs not in interface_dofs]
+    interior_dofs = all_dofs[all_dofs .∉ Ref(interface_dofs)]
+end
 
 # Given the delineation between interior and interface dofs, domain 
 # decomposition methods are then concerned with handling the fact that
