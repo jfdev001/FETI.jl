@@ -7,8 +7,48 @@
 
 A prototype finite element tearing and interconnecting (FETI) solver. Serial algorithm will be implemented first, and possibly the parallel version will be included. A parallel version with a data oriented approach (e.g., using PartitionedArrays.jl) could be more simple than using MPI.
 
+The pseudocode for the FETI solver itself:
+
 ```julia
-## Pseudocode
+# args could just be workspace...
+# TODO: How is F_I not explicitly formed... perhaps see section 6 with parallel solve,
+# check AMFeti, and check Krylov.jl or IterativeSolvers.jl for how the A*s operation in 
+# in the pcg is done in a "matrix free" setting.
+# TODO: How is r0 formed for the PCPG for N_s subdomains? 
+function feti_solver(LocalProblems, Connector, InterfacePreconditioner, InterfaceSolver)
+    lambda = initial_lambda(LocalProblems, Connector) # Appendix 2, equation (37)
+    F_I = compute_F_I(LocalProblems, Connector) # eq(14), but sec. 5 not explicit assembled
+    alpha = compute_alpha(lambda, F_I, LocalProblems, Connector) # pg. 1213
+    projection_P = projection(LocalProblems) # pg. 1213
+    set_projection_P(InterfaceSolver, projection_P)
+    set_preconditioner(InterfaceSolver, InterfacePreconditioner)
+    while !converged 
+        # Direct solves on local problems in parallel
+        # TODO: sec 6, 
+        # "...all local finite element computations can be performed in parallel. 
+        # [Including]... factoring Kj"... but how can Kj be factored if it is singular
+        # on floating subdomains...
+        for j, LocalProblem in enumerate(LocalProblems)
+            # equation (8) and (10)
+            Rj = nullspace(LocalProblem) # pg. 1213
+            Kj_pinv = pinv(LocalProblem)
+            fj = rhs(LocalProblem)
+            BjT = sum(transpose.(connectivity(j, Connector)))
+            uj = Kj_pinv*(fj + BjT) + Rj*alpha
+        end
+    
+        # parallel'ish interface solve
+        set_lambda(InterfaceSolver, lambda)
+        lambda = solve(InterfaceSolver, LocalProblems, Connector) 
+        alpha = compute_alpha(lambda, F_I, LocalProblems, Connector)
+    end 
+end 
+```
+
+Initial pseudocode below with slightly more details and less references to equations.
+
+```julia
+## "Verbose" pseudocode
 # Setup local subdomain problems by using a partitioned mesh 
 mesh = make_mesh()
 partitions = partition_mesh(mesh) 
