@@ -93,4 +93,10 @@ end
 
 [1] : AMFeti. url: https://github.com/AppliedMechanics/AMfeti
 
-[2] : Farhat, C. A Method of Finite Element Tearing and Interconnecting and its Parallel Solution Algorithm. vol 32, 1205-1227. 1991. 
+[2] : Farhat, C. A Method of Finite Element Tearing and Interconnecting and its 
+Parallel Solution Algorithm. International Journal for Numerical Methods in
+Engineering. vol 32, 1205-1227. 1991. 
+
+[3] : Farhat, C., Mandel, J., and Roux, F.X. Optimal convergence properties of 
+the FETI domain decomposition method. Computer Methods in Applied Mechanics and
+Engineering. vol 115, 365-385. 1994.
