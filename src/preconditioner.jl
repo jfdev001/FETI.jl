@@ -3,10 +3,12 @@ abstract type Preconditioner end
 @doc raw"""
     struct TracePreconditioner <: Preconditioner
 
-Simple preconditioner ``P_{I}^{-1} = \sum_{j=1}^{N_s} K_{j}^{I}`` for 
-computation of interface ``I`` constraints by the preconditioned conjugate 
-projected gradient method for ``N_s`` subdomains with interface dofs of local 
-stiffness matrices ``\mathbf{K}_{j}^{I}``.
+Simple preconditioner for the interface problem. Uses the sum of the trace 
+``tr(\cdot)`` of local stiffness matrices ``{K}_{bb}^{s}`` on the interface 
+``I`` with interface dofs denoted by ``b`` and subdomains by ``s`` for ``N_s`` 
+subdomains.
+
+``P_{I}^{-1} = \sum_{s=1}^{N_s} tr(K_{bb}^{s}).``
 
 # References
 [1] : Equation (24) from Farhat, C. A Method of Finite Element Tearing and 
@@ -18,8 +20,9 @@ struct TracePreconditioner <: Preconditioner end
 @doc raw"""
     struct DirichletPreconditioner <: Preconditioner
 
-Dirichlet preconditioner that uses a Schur-complement to estimate interface 
-forces. This is the most accurate but also most expensive preconditioner.
+Dirichlet preconditioner that uses a Schur-complement to precondition the 
+interface problem. This is the most accurate but also most expensive 
+preconditioner.
 
 The exact definition for the preconditioner ``D_{I}^{-1}`` for ``N_s`` 
 subdomains is given below for interior dofs ``i``, interface dofs ``b``, 
