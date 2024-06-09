@@ -1,4 +1,5 @@
 abstract type Preconditioner end
+apply(p::Preconditioner) = throw("notimplemented")
 
 @doc raw"""
     struct TracePreconditioner <: Preconditioner
