@@ -2,5 +2,5 @@ using FETI
 using Test
 
 @testset "FETI.jl" begin
-    # Write your tests here.
+    include("feti_solver_tests.jl")
 end

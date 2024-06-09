@@ -1,6 +1,6 @@
 # Combined connectivity, pcpg, and fem to solve a linear system of equations
 # (assumes linear static problem) via FETI
-using LinearAlgebra
+import LinearAlgebra: nullspace, pinv 
 
 @kwdef struct ClassicalFETI{TLP, TC, TIS, TIP}
     local_problems::TLP
@@ -13,18 +13,26 @@ local_problems(feti::ClassicalFETI) = feti.local_problems
 connectivity(feti::ClassicalFETI) = feti.connectivity
 interface_solver(feti::ClassicalFETI) = feti.interface_solver
 interface_preconditioner(feti::ClassicalFETI) = feti.interface_preconditioner
+export local_problems, connectivity, interface_solver, interface_preconditioner
 
 struct LocalProblem{TK, TB}
+    "Stiffness matrix on subdomain `s`"
     Ks::TK
+    "Right hand side (forcing vector) on subdomain `s`"
     bs::TB
-
+    "Nullspace of `Ks` -- also denoted `Rs` in Farhat1991"
     nullspace_Ks::TK
+    "Cached pseudoinverse of stiffness matrix `Ks`"
     pinv_Ks::TK
 
     function LocalProblem(Ks, bs)
         nullspace_Ks = nullspace(Ks)
         pinv_Ks = pinv(Ks) 
-        new(Ks, bs, nullspace_Ks, pinv_Ks)
+        new{typeof(Ks), typeof(bs)}(Ks, bs, nullspace_Ks, pinv_Ks)
+    end
+
+    function LocalProblem(Ks, bs, nullspace_Ks, pinv_Ks)
+        new{typeof(Ks), typeof(bs)}(Ks, bs, nullspace_Ks, pinv_Ks)
     end
 end     
 
@@ -32,8 +40,18 @@ stiffness(lp::LocalProblem) = lp.Ks
 rhs(lp::LocalProblem) = lp.bs
 nullspace(lp::LocalProblem) = lp.nullspace_Ks
 pinv(lp::LocalProblem) = lp.pinv_Ks
+export stiffness, rhs, nullspace, pinv 
 
-function ClassicalFETI(mesh, assemble; preconditioner::Symbol = :trace)
+"""
+    ClassicalFETI(...)
+
+Constructs the `struct ClassicalFETI` by applying an `assemble` operation
+on a partitioned (by METIS) `mesh` and constructing local problems to be solved
+directly while the `preconditioner` will be used to solve the interface problem
+via preconditioned conjugate projected gradient algorithm.
+"""
+function ClassicalFETI(
+    mesh, assemble::T; preconditioner::Symbol = :trace) where T <: Base.Callable
     # Validate inputs 
     valid_preconditioners = [:dirichlet, :lumped, :trace]
     if preconditioner ∉  valid_preconditioners
@@ -50,7 +68,7 @@ function ClassicalFETI(mesh, assemble; preconditioner::Symbol = :trace)
         part_to_local_problem[part_i] = local_problem
     end
 
-    # Setup connectivity info 
+    # TODO: This is really the hardest part: Setup connectivity info 
     connectivity = Matrix{Connectivity}(undef, nparts, nparts)
     for j in 1:nparts
         for k in j+1:nparts 
@@ -83,6 +101,10 @@ function ClassicalFETI(mesh, assemble; preconditioner::Symbol = :trace)
 
     interface_solver = PCPG()    
 
-    new(; local_problems, connectivity, interface_preconditioner, interface_solver)
+    new{typeof(local_problems), 
+        typeof(connectivity), 
+        typeof(interface_preconditioner),
+        typeof(interface_solver)}(; 
+        local_problems, connectivity, interface_preconditioner, interface_solver)
 end
 
