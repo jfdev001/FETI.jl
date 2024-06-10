@@ -11,8 +11,7 @@ converged(s)::Bool = s.converged
 
 TODO!
 """
-function solve!(solver::TS) where TS <: InterfaceSolver 
-    initialize!(solver)
+function solve!(solver::TIS) where TIS <: InterfaceSolver 
 
     # solve
     for k = 1:niters(solver)
@@ -90,6 +89,7 @@ apply_interface_force(solver::PCPG, s) = throw("notimplemented")
 function initialize!(solver::PCPG)
     solver.λ = λ₀
     solver.r = r₀
+    solver.s = r₀ # Farhat1991, eq. (20) 
     converged = false 
     return nothing 
 end 
