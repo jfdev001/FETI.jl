@@ -25,12 +25,19 @@ end
     struct PCPG <: InterfaceSolver
 
 Preconditioned conjugate projected gradient (PCPG) for solving the interface
-problem. 
+problem.
+
+TODO: Check HPDDM for computation of residual and possibly ref [2].
 
 # References
 [1] : Equation (20) from Farhat, C. A Method of Finite Element Tearing and 
 Interconnecting and its Parallel Solution Algorithm. International Journal for 
 Numerical Methods in Engineering. vol 32, 1205-1227. 1991. 
+
+[2] : Algorithm 4.3.1 in Tarek Poonithara Abraham Mathew. Domain Decomposition 
+Methods for the Numerical Solution of Partial Differential Equations, volume 61 
+of Lecture Notes in Computational Science and Engineering. Springer, Berlin, 
+Heidelberg, 2008.
 """
 struct PCPG{TLP, TP <: Preconditioner, Projection, Tλ, TR} <: InterfaceSolver 
     local_problems::TLP 
@@ -56,7 +63,7 @@ struct PCPG{TLP, TP <: Preconditioner, Projection, Tλ, TR} <: InterfaceSolver
         F_I = nothing 
  
         # Initialize lambda
-        λ₀ = nothing  
+        λ₀ = nothing  # could be zeros, see ref [2]
         λ = λ₀
         
         # Initialize the residual 
@@ -92,6 +99,29 @@ function initialize!(solver::PCPG)
     solver.s = r₀ # Farhat1991, eq. (20) 
     converged = false 
     return nothing 
+end 
+
+"""
+    compute_r₀(...)
+
+Return the initial residual ``r_0`` using 
+
+``r_0 = d - F_I \\lambda_0 = \\sum_{s=1}^{N_s} B^{s} K^{s^{+}} f^{s} - (\\sum_{s=1}^{N_s} B^{s} K^{s^{+}} B^{s}) \\lambda_0``
+
+TODO!
+
+# References
+[1] : Equation (19) from Farhat, C. A Method of Finite Element Tearing and 
+Interconnecting and its Parallel Solution Algorithm. International Journal for 
+Numerical Methods in Engineering. vol 32, 1205-1227. 1991. 
+ 
+[2] : Equation (13) and (17) from Farhat, C., Mandel, J., and Roux, F.X. Optimal 
+convergence properties of the FETI domain decomposition method. Computer Methods 
+in Applied Mechanics and Engineering. vol 115, 365-385. 1994.
+
+"""
+function compute_r₀(solver::PCPG)
+
 end 
 
 """
